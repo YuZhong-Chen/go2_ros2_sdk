@@ -3,8 +3,8 @@ aiohttp
 paho-mqtt
 python-dotenv
 wasmtime
-open3d
-torch
-torchvision
+# open3d
+# torch
+# torchvision
 pycryptodome
 opencv-python

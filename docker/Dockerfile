@@ -1,54 +1,69 @@
-FROM ros:humble-ros-base
+# Base Image: https://hub.docker.com/r/osrf/ros/tags?page=1&name=humble
+FROM osrf/ros:humble-desktop-full AS amd64
+# Base Image: https://hub.docker.com/r/arm64v8/ros/tags?page=1&name=humble
+FROM arm64v8/ros:humble AS arm64
 
-# Install basic requirements
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Use docker automatic platform args to select the base image.
+# It may be `arm64` or `amd64` depending on the platform.
+# Ref: https://docs.docker.com/reference/dockerfile/#automatic-platform-args-in-the-global-scope
+FROM $TARGETARCH
+ARG TARGETARCH
+
+# Arguments for the default user
+ARG USERNAME=user
+ARG USER_UID=1000
+
+# Upgrade packages
+RUN apt-get update && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install sudo and create a user with sudo privileges
+# Ref: https://stackoverflow.com/a/65434659
+RUN apt-get update && apt-get install -y sudo \
+    && useradd -m -s /bin/bash -u $USER_UID -G sudo $USERNAME \
+    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install common tools
+RUN apt-get update && apt-get install -y \
     curl \
     gnupg2 \
     lsb-release \
+    git \
+    htop \
+    iputils-ping \
+    nano \
+    net-tools \
+    tmux \
+    tree \
+    unzip \
+    vim \
+    wget \
+    zip \
     python3-pip \
-    portaudio19-dev \
+    software-properties-common \
     mesa-utils \
+    x11-apps \
+    x11-utils \
+    libgl1 \
     libgl1-mesa-glx \
     libgl1-mesa-dri \
-    ros-humble-rviz2 \
-    software-properties-common
+    portaudio19-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install ros2 dependencies
+RUN apt-get update && apt-get install -y \
+    ros-humble-rviz2
 
 # Install specific numpy version first
 RUN pip install 'numpy<2.0.0'
 
-# Create workspace
-WORKDIR /ros2_ws
-
-# Clone the repository with submodules
-COPY . /ros2_ws/src
-
 # Install Python requirements (with numpy constraint)
-RUN cd src && pip install -r requirements.txt
+COPY --chown=$USERNAME:$USERNAME requirements.txt /home/$USERNAME/requirements.txt
+RUN pip install -r /home/$USERNAME/requirements.txt
 
-# Install ROS dependencies
-RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
-    rosdep install --from-paths src --ignore-src -r -y
-
-# Build the workspace
-RUN . /opt/ros/${ROS_DISTRO}/setup.sh && \
-    colcon build
-
-# Source ROS2 and workspace in bashrc
-RUN echo "source /opt/ros/${ROS_DISTRO}/setup.bash" >> /root/.bashrc && \
-    echo "source /ros2_ws/install/setup.bash" >> /root/.bashrc
-
-# Set environment variables
-ENV ROBOT_IP=""
-ENV CONN_TYPE="webrtc"
-ENV WEBRTC_SERVER_HOST="0.0.0.0"
-ENV WEBRTC_SERVER_PORT="9991"
-
-# Remove apt cache
-RUN rm -rf /var/lib/apt/lists/*
-
-# add /ros2_ws to the entrypoint
-RUN sed --in-place --expression \
-      '$isource "/ros2_ws/install/setup.bash"' \
-      /ros_entrypoint.sh
-
-CMD ["ros2", "launch", "go2_robot_sdk", "robot.launch.py"]
+# Other
+COPY --chown=$USERNAME:$USERNAME .bashrc /home/$USERNAME/.bashrc
+USER $USERNAME
+ENTRYPOINT []
+CMD ["/bin/bash"]

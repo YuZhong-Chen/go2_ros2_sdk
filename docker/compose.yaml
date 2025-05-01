@@ -1,21 +1,50 @@
 version: '3.8'
 
 services:
-  unitree_ros:
+  unitree_ros2:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
+      # TODO: Specify the target platform to build the image, otherwise it will build for the host platform.
+      # Reference: https://docs.docker.com/compose/compose-file/build/#platforms
+      # platforms:
+      #   - "linux/arm64"
+    image: yuzhong1214/unitree_ros2:latest
+    container_name: unitree_ros2
+    stdin_open: true
+    tty: true
+    # TODO: Comment the line below if the workspace don't need to communicate through `/dev/*` devices.
+    privileged: true
+    command: /bin/bash
+    network_mode: host
     environment:
-      - ROBOT_IP=${ROBOT_IP} 
-      - CONN_TYPE=${CONN_TYPE:-webrtc}
+      # Unitree configuration
+      - ROBOT_IP=192.168.50.153
+      - CONN_TYPE=cyclonedds # webrtc / cyclonedds
       - WEBRTC_SERVER_HOST=0.0.0.0  # Listen on all interfaces
       - WEBRTC_SERVER_PORT=${WEBRTC_SERVER_PORT:-9991}
-      - DISPLAY=${DISPLAY:-}  # For GUI applications like rviz2
+      # Set X11 server environment variable for existing display.
+      - DISPLAY=${DISPLAY:-}
+      # References:
+      # - https://docs.ros.org/en/humble/Concepts/Intermediate/About-Domain-ID.html
+      # - https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Configuring-ROS2-Environment.html
+      # - https://docs.ros.org/en/humble/Tutorials/Demos/Logging-and-logger-configuration.html#console-output-colorizing
+      - ROS_LOCALHOST_ONLY=0
+        # Localhost only is disabled by default to allow communication with external devices.
+      - ROS_DOMAIN_ID=0
+        # Domain ID is set to 0 to allow communication through ros1_bridge.
+      - RCUTILS_COLORIZED_OUTPUT=1
+      - ROS2_WS=/home/user/unitree_ros2_ws
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix  # X11 forwarding
-      - ${HOME}/.Xauthority:/root/.Xauthority:rw
-    network_mode: "host"  # Required for ROS2 discovery and robot communication
-    privileged: true  # Required for hardware access
+      # Mount local timezone into container.
+      # Reference: https://stackoverflow.com/questions/57607381/how-do-i-change-timezone-in-a-docker-container
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+      # Mount X11 server
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      # X11-unix is mounted to allow GUI applications to display on host.
+      - $HOME/.Xauthority:/home/user/.Xauthority
+      # Mount root workspace to allow easy access to all workspaces.
+      - ..:/home/user/unitree_ros2_ws
     devices:
-      - /dev/input:/dev/input  # For joystick access
-    restart: unless-stopped
+      - /dev:/dev  # For joystick access
