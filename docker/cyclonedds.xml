@@ -1,0 +1,11 @@
+<CycloneDDS>
+  <Domain>
+    <General>
+      <Interfaces>
+        <!-- TODO: Change the name to your network interface -->
+        <!-- You can use `ifconfig` to find it -->
+        <NetworkInterface name="enx00e04a3a1eff" priority="default" multicast="default" />
+      </Interfaces>
+    </General>
+  </Domain>
+</CycloneDDS>

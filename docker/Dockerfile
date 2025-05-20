@@ -53,14 +53,12 @@ RUN apt-get update && apt-get install -y \
 
 # Install ros2 dependencies
 RUN apt-get update && apt-get install -y \
-    ros-humble-rviz2
-
-# Install specific numpy version first
-RUN pip install 'numpy<2.0.0'
+    ros-humble-rviz2 \
+    ros-humble-rmw-cyclonedds-cpp 
 
 # Install Python requirements (with numpy constraint)
 COPY --chown=$USERNAME:$USERNAME requirements.txt /home/$USERNAME/requirements.txt
-RUN pip install -r /home/$USERNAME/requirements.txt
+RUN pip3 install -r /home/$USERNAME/requirements.txt
 
 # Other
 COPY --chown=$USERNAME:$USERNAME .bashrc /home/$USERNAME/.bashrc

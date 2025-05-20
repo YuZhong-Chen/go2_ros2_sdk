@@ -31,11 +31,12 @@ services:
       # - https://docs.ros.org/en/humble/Tutorials/Beginner-CLI-Tools/Configuring-ROS2-Environment.html
       # - https://docs.ros.org/en/humble/Tutorials/Demos/Logging-and-logger-configuration.html#console-output-colorizing
       - ROS_LOCALHOST_ONLY=0
-        # Localhost only is disabled by default to allow communication with external devices.
       - ROS_DOMAIN_ID=0
-        # Domain ID is set to 0 to allow communication through ros1_bridge.
       - RCUTILS_COLORIZED_OUTPUT=1
       - ROS2_WS=/home/user/unitree_ros2_ws
+      # TODO: Set the following variables if you are running on your host machine.
+      # - RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+      # - CYCLONEDDS_URI=file:///etc/cyclonedds/cyclonedds.xml
     volumes:
       # Mount local timezone into container.
       # Reference: https://stackoverflow.com/questions/57607381/how-do-i-change-timezone-in-a-docker-container
@@ -47,5 +48,7 @@ services:
       - $HOME/.Xauthority:/home/user/.Xauthority
       # Mount root workspace to allow easy access to all workspaces.
       - ..:/home/user/unitree_ros2_ws
+      # TODO: Set the following variables if you are running on your host machine.
+      # - ./cyclonedds.xml:/etc/cyclonedds/cyclonedds.xml
     devices:
       - /dev:/dev  # For joystick access
