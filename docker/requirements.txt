@@ -3,8 +3,10 @@ aiohttp
 paho-mqtt
 python-dotenv
 wasmtime
-# open3d
+requests
+open3d==0.18.0
 # torch
 # torchvision
 pycryptodome
 opencv-python
+numpy==1.21.5
